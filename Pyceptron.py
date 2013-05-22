@@ -77,7 +77,7 @@ def func_gauss(value):
 
 #- define funcao de somatório-
 def func_somatorio(x, w):
-	""" x,w -> vetores, fazer a soma ponderada de cada elemento e
+	""" x,w -> vetores, faz a soma ponderada de cada elemento e
 		retornar um vetor de somas para a proxima camada"""
 
 	output = []
@@ -109,7 +109,7 @@ class Pyceptron(object):
     Framework - Multilayer Perceptron
     Framework para criação de uma rede neural de proposito geral usando 1
     ou duas camadas ocultas
-    Última alteração: 09/04/2013 - implementado o metodo: execute, _forward
+    Última alteração: 22/05/2013 - implementado o metodo: execute, _forward
     Falta implementar: _backward, e verificar consistencia das dimensoes das
     camadas
     """
@@ -222,11 +222,11 @@ class Pyceptron(object):
         #verifica se existe mais de 1 camada oculta, se existir considera ela
 		if self.topology[2] > 0:
 			x = ((self.topology[0] * self.topology[1]) +
-            (self.topology[1] * self.topology[2]) +
-            (self.topology[2] * self.topology[3]))
+                (self.topology[1] * self.topology[2]) +
+                (self.topology[2] * self.topology[3]))
 		else:
 			x = ((self.topology[0] * self.topology[1]) +
-            (self.topology[1] * self.topology[3]))
+                (self.topology[1] * self.topology[3]))
 
 		print( x, 'conexões synapticas')
 
@@ -255,8 +255,10 @@ class Pyceptron(object):
 		#copia os dados de entrada para a camada de entrada
 		#self.layer_input = entry.copy()
 		self.layer_hidden1 = self.f(func_somatorio(entry, self.layer_hidden1))
-		self.layer_hidden2 = self.f(func_somatorio(self.layer_hidden1, self.layer_hidden2))
-		self.layer_output = self.f(func_somatorio(self.layer_hidden2, self.layer_output))
+		self.layer_hidden2 = self.f(func_somatorio(self.layer_hidden1,
+                                     self.layer_hidden2))
+		self.layer_output = self.f(func_somatorio(self.layer_hidden2,
+                                     self.layer_output))
 
 	def _backward( self ):
 		""" passo para trás: executa a segunda fase do treinamento da rede

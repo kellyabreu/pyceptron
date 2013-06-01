@@ -75,33 +75,59 @@ def func_gauss(value):
 
 	return scipy.array(y)
 
+def der_sigmoid(value):
+    """derivada da funcao sigmoide"""
+
+    y = []
+    v = 0.0
+    for i in value:
+        v = math.exp(i)/((math.exp(i+1))**2)
+        y.append(v)
+
+    return scipy.array(y)
+
+def der_tanh(value):
+    """derivada da funcao tangente"""
+
+    y = []
+    v = 0.0
+    for i in value:
+        v = 1 - i**2
+        y.append(v)
+
+    return scipy.array(y)
+
+def der_gauss(value):
+    """derivada da funcao gaussiana"""
+    pass
+
 #- define funcao de somatório-
-def func_somatorio(x, w):
+def func_sum(x, w):
 	""" x,w -> vetores, faz a soma ponderada de cada elemento e
 		retornar um vetor de somas para a proxima camada"""
 
 	output = []
-	soma = 0.0
+	s = 0.0
 
 	for j in range(len(w)):
-		soma = x * w[j]
-		soma = sum(soma)
-		output.append(soma)
+		s = x * w[j]
+		s = sum(s)
+		output.append(s)
 
 	return scipy.array(output)
 
 #--preenche matriz com dados pseudo aletórios
-def randpesos(arg):
+def randvalues(arg):
     """ arg -> tupla
      funcao que inicializa os pesos com valores aleatorios do intervalo
     (-0.2,0.2)
     """
-    matriz = scipy.ones(arg)
+    m = scipy.ones(arg)
     for k in range(arg[0]):
         for l in range(arg[1]):
-            matriz[k][l] = random.uniform(-1,1)
+            m[k][l] = random.uniform(-1,1)
 
-    return matriz
+    return m
 
 #- - classe Mlp
 class Pyceptron(object):
@@ -109,26 +135,27 @@ class Pyceptron(object):
     Framework - Multilayer Perceptron
     Framework para criação de uma rede neural de proposito geral usando 1
     ou duas camadas ocultas
-    Última alteração: 22/05/2013 - implementado o metodo: execute, _forward
+    Última alteração: 27/05/2013
+    atributo: self.f -> funcao de ativacao, self.dv -> derivada de self.f
     Falta implementar: _backward, e verificar consistencia das dimensoes das
     camadas
     """
 
 	def __init__(self, arg):
-		"""
-			atributos da classe Mlp,
-		 	arg -> tupla (0,0,0,0)
-		 	( num. neuronios da c. entrada , n. neuronios 1ª c. oculta ,
-		  	n. neuronios 2ª camada oculta, n neuronios c. saida )
-		"""
-		#map(lambda x: x, [1] * len(self._entrada))
-		self.topology = arg
-		self.minput = None
-		self.moutput = None
-		self.tx = None
-		self.it = None
-		self.mm = None
-		self.erro_medio = None
+	    """atributos da classe Mlp, arg -> tupla (0,0,0,0)
+        ( num. neuronios da c. entrada , n. neuronios 1ª c. oculta ,
+		n. neuronios 2ª camada oculta, n neuronios c. saida )
+        """
+
+        self.topology = arg # topologia da rede (tupla)
+		self.minput = None # matriz com dados de entrada da rede
+		self.moutput = None # matriz com dados de saída esperada da rede
+		self.tx = None # Taxa de aprendizado da rede
+		self.it = None # Número de iterações/épocas
+		self.mm = None # constante de momento
+		self.error_m = None # erro médio quadrático do treino
+        self.f = None #funcao de ativacao
+        self.df = None # Derivada da Funcao de Ativacao
 
 		#camada de entrada, oculta 1, oculta 2 (opcional), camada de saida
 		self.layer_input = None
@@ -142,6 +169,7 @@ class Pyceptron(object):
 
 	def data(self, *arg):
 		"""
+            recebe os dados de entrada e saída para treinamento.
 			arg[0] -> matriz de entrada
 		 	arg[1] -> matriz de saida esperada
 		"""
@@ -151,6 +179,7 @@ class Pyceptron(object):
 
 	def set(self, *arg):
 		"""
+            recebe os parametros da rede neural.
 			arg[0] -> taxa de aprendizado
 			arg[1] -> numero máximo de iterações,
 		 	arg[2] -> tipo de função de ativação: str -> sigm, gauss, tanh
@@ -184,12 +213,12 @@ class Pyceptron(object):
         """
 
 		self.layer_input = scipy.zeros((self.topology[0], 1))
-		self.layer_hidden1 = randpesos((self.topology[1], self.topology[0]))
+		self.layer_hidden1 = randvalues((self.topology[1], self.topology[0]))
 		self.momentum_hidden1 = scipy.zeros(self.layer_hidden1.shape)
 
         #verifica se existe mais de 1 camada oculta, se existir considera ela
 		if self.topology[2] >= 1:
-			self.layer_hidden2 = randpesos((self.topology[2], self.topology[1]))
+			self.layer_hidden2 = randvalues((self.topology[2], self.topology[1]))
 			#pesos da camada oculta aleatorios
 			self.momentum_hidden2 = scipy.zeros(self.layer_hidden2.shape)
 			self.layer_output = scipy.zeros((self.topology[3], self.topology[2]))
@@ -201,6 +230,7 @@ class Pyceptron(object):
 
 	def print_layers( self ):
 		"""
+        *esse método será removido na versão final.*
         imprime os valores armazenados nas matrizes de neuronios de cada
         camada
         """
@@ -236,12 +266,12 @@ class Pyceptron(object):
 		#enquanto o numero de iteracoes nao atingir o máximo
 		for iteration in range(self.it):
 
-			erro = 0.0
-			#para cada linha da matriz de entrada
+			error = 0.0
+			#para cada linha da matriz de entrada e saída
 			for entry, output in zip(self.minput, self.moutput):
 				#print("entry: ", entry, " | saida: ", output )
 				self._forward( entry )
-				#erro += self._backward(output)
+				error += self._backward(output)
 				#self.print_layers()
 
 	def test(self):
@@ -251,17 +281,34 @@ class Pyceptron(object):
 	def _forward(self, entry):
 		""" passo para frente: executa a primeira fase do treinamento da
          rede neural
+         entry -> elemento da matriz de entrada
         """
 		#copia os dados de entrada para a camada de entrada
 		#self.layer_input = entry.copy()
-		self.layer_hidden1 = self.f(func_somatorio(entry, self.layer_hidden1))
-		self.layer_hidden2 = self.f(func_somatorio(self.layer_hidden1,
+		self.layer_hidden1 = self.f(func_sum(entry, self.layer_hidden1))
+		self.layer_hidden2 = self.f(func_sum(self.layer_hidden1,
                                      self.layer_hidden2))
-		self.layer_output = self.f(func_somatorio(self.layer_hidden2,
+		self.layer_output = self.f(func_sum(self.layer_hidden2,
                                      self.layer_output))
 
-	def _backward( self ):
+	def _backward( self, output ):
 		""" passo para trás: executa a segunda fase do treinamento da rede
         neural
+        output -> elemento
         """
-		pass
+        #out = saida
+        #h2 = hidden2
+        #h1 = hidden1
+        #in = entrada
+
+        delta_out_h2 = None
+        delta_h2_h1 = None
+        delta_h1_in = None
+
+        #se tiver duas camadas ocultas
+        if self.topology[2] > 0:
+            error = 0.0
+            error =
+
+        else:
+            pass

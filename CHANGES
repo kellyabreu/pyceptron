@@ -1,0 +1,9 @@
+
+<17/07/2013>:
+* corrigido método: _forward() não estava considerando se o perceptron tinha apenas 1 camada oculta.
+* Implementando o método Backward;
+
+
+<27/05/2013>:
+*  Implementado as derivadas das funções de ativação: sigmoid, tanh:
+der_sigmoid(), der_tanh()

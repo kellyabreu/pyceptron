@@ -41,39 +41,39 @@ import scipy
 
 # -define as funcoes de ativacao
 def func_sigmoid(value):
-	""" funcao sigmoide """
+    """ funcao sigmoide """
 
-	y = []
-	v = 0.0
+    y = []
+    v = 0.0
 
-	for i in value:
-		v = 1/(1+(math.exp(-i)))
-		y.append(v)
+    for i in value:
+        v = 1/(1+(math.exp(-i)))
+        y.append(v)
 
-	return scipy.array(y)
+    return scipy.array(y)
 
 def func_tanh(value):
-	"""funcao tangente hiperbolica"""
+    """funcao tangente hiperbolica"""
 
-	y = []
-	v = 0.0
+    y = []
+    v = 0.0
 
-	for i in value:
-		v = math.tanh(i)
-		y.append(v)
+    for i in value:
+        v = math.tanh(i)
+        y.append(v)
 
-	return scipy.array(y)
+    return scipy.array(y)
 
 def func_gauss(value):
-	"""funcao gaussiana"""
+    """funcao gaussiana"""
 
-	y = []
-	v = 0.0
-	for i in value:
-		v = math.exp((-i**2))
-		y.append(v)
+    y = []
+    v = 0.0
+    for i in value:
+        v = math.exp((-i**2))
+        y.append(v)
 
-	return scipy.array(y)
+    return scipy.array(y)
 
 def der_sigmoid(value):
     """derivada da funcao sigmoide"""
@@ -88,7 +88,6 @@ def der_sigmoid(value):
 
 def der_tanh(value):
     """derivada da funcao tangente"""
-
     y = []
     v = 0.0
     for i in value:
@@ -103,23 +102,25 @@ def der_gauss(value):
 
 #- define funcao de somatório-
 def func_sum(x, w):
-	""" x,w -> vetores, faz a soma ponderada de cada elemento e
-		retornar um vetor de somas para a proxima camada"""
+    """
+    x,w -> vetores, faz a soma ponderada de cada elemento e
+    retornar um vetor de somas para a proxima camada
+    """
+    output = []
+    s = 0.0
 
-	output = []
-	s = 0.0
+    for j in range(len(w)):
+        s = x * w[j]
+        s = sum(s)
+        output.append(s)
 
-	for j in range(len(w)):
-		s = x * w[j]
-		s = sum(s)
-		output.append(s)
-
-	return scipy.array(output)
+    return scipy.array(output)
 
 #--preenche matriz com dados pseudo aletórios
 def randvalues(arg):
-    """ arg -> tupla
-     funcao que inicializa os pesos com valores aleatorios do intervalo
+    """
+    arg -> tupla
+    funcao que inicializa os pesos com valores aleatorios do intervalo
     (-0.2,0.2)
     """
     m = scipy.ones(arg)
@@ -131,184 +132,192 @@ def randvalues(arg):
 
 #- - classe Mlp
 class Pyceptron(object):
-	"""
+    """
     Framework - Multilayer Perceptron
     Framework para criação de uma rede neural de proposito geral usando 1
     ou duas camadas ocultas
-    Última alteração: 27/05/2013
+    Última alteração: 17/07/2013 [ver arquivo -> CHANGES]
     atributo: self.f -> funcao de ativacao, self.dv -> derivada de self.f
-    Falta implementar: _backward, e verificar consistencia das dimensoes das
-    camadas
     """
 
-	def __init__(self, arg):
-	    """atributos da classe Mlp, arg -> tupla (0,0,0,0)
-        ( num. neuronios da c. entrada , n. neuronios 1ª c. oculta ,
-		n. neuronios 2ª camada oculta, n neuronios c. saida )
+    def __init__(self, arg):
+        """
+        atributos da classe Mlp, arg -> tupla (0,0,0,0)
+        ( num. neuronios da c. entrada , n. neuronios 1ª c. oculta
+        n.neuronios 2ª camada oculta, n neuronios c. saida )
         """
 
-        self.topology = arg # topologia da rede (tupla)
-		self.minput = None # matriz com dados de entrada da rede
-		self.moutput = None # matriz com dados de saída esperada da rede
-		self.tx = None # Taxa de aprendizado da rede
-		self.it = None # Número de iterações/épocas
-		self.mm = None # constante de momento
-		self.error_m = None # erro médio quadrático do treino
-        self.f = None #funcao de ativacao
-        self.df = None # Derivada da Funcao de Ativacao
+        self.topology = arg
+        self.minput = None
+        self.moutput = None
+        self.tx = None
+        self.it = None
+        self.mm = None
+        self.error_m = None
+        self.f = None
+        self.df = None
 
-		#camada de entrada, oculta 1, oculta 2 (opcional), camada de saida
-		self.layer_input = None
-		self.layer_hidden1 = None
-		self.layer_hidden2 = None
-		self.layer_output = None
-		#constantes de momento
-		self.momentum_hidden1 = None
-		self.momentum_hidden2 = None
-		self.momentum_output = None
+        #camada de entrada, oculta 1, oculta 2 (opcional), camada de saida
+        self.layer_input = None
+        self.layer_hidden1 = None
+        self.layer_hidden2 = None
+        self.layer_output = None
 
-	def data(self, *arg):
-		"""
-            recebe os dados de entrada e saída para treinamento.
-			arg[0] -> matriz de entrada
-		 	arg[1] -> matriz de saida esperada
-		"""
+        #constantes de momento
+        self.momentum_hidden1 = None
+        self.momentum_hidden2 = None
+        self.momentum_output = None
 
-		self.minput = arg[0]
-		self.moutput = arg[1]
+    def data(self, *arg):
+        """ recebe os dados de entrada e saída para treinamento.
+        arg[0] -> matriz de entrada
+        arg[1] -> matriz de saida esperada
+        """
+        self.minput = arg[0]
+        self.moutput = arg[1]
 
-	def set(self, *arg):
-		"""
-            recebe os parametros da rede neural.
-			arg[0] -> taxa de aprendizado
-			arg[1] -> numero máximo de iterações,
-		 	arg[2] -> tipo de função de ativação: str -> sigm, gauss, tanh
-		 	arg[3] -> constante momento(momentum)
-		"""
+    def set(self, *arg):
+        """
+        recebe os parametros da rede neural.
+        arg[0] -> taxa de aprendizado
+        arg[1] -> numero máximo de iterações,
+        arg[2] -> tipo de função de ativação: str -> sigm, gauss, tanh
+        arg[3] -> constante momento(momentum)
+        """
+        self.tx = arg[0]
+        self.it = arg[1]
+        #escolhe a funcao de ativacao do neuronio
+        if arg[2] == 'sigm':
+            self.f = func_sigmoid
+        elif arg[2] == 'gauss':
+            self.f = func_gauss
+        elif arg[2] == 'tanh':
+            self.f = func_tanh
+        else:
+            self.f = func_sigmoid
 
-		self.tx = arg[0]
-		self.it = arg[1]
+        #contante de momentum
+        self.mm = arg[3]
+        # configura a topologia da rede
+        self._config_topology()
 
-		#escolhe a funcao de ativacao do neuronio
-		if arg[2] == 'sigm':
-			self.f = func_sigmoid
-		elif arg[2] == 'gauss':
-			self.f = func_gauss
-		elif arg[2] == 'tanh':
-			self.f = func_tanh
-		else:
-			self.f = func_sigmoid
-
-		#contante de momentum
-		self.mm = arg[3]
-		# configura a topologia da rede
-		self._config_topology()
-
-	def _config_topology(self):
-		""" seta nas camadas a topologia definida no atributo self.topology
+    def _config_topology(self):
+        """ seta nas camadas a topologia definida no atributo self.topology
             topology -> [0] = n. neuronios camada de entrada
                         [1] = n. " na 1º camada oculta
                         [2] = n. " na 2ª camada oculta (0 -> senao tiver)
                         [3] = n. " na camada de saída
         """
 
-		self.layer_input = scipy.zeros((self.topology[0], 1))
-		self.layer_hidden1 = randvalues((self.topology[1], self.topology[0]))
-		self.momentum_hidden1 = scipy.zeros(self.layer_hidden1.shape)
+        self.layer_input = scipy.zeros((self.topology[0], 1))
+        self.layer_hidden1 = randvalues((self.topology[1], self.topology[0]))
+        self.momentum_hidden1 = scipy.zeros(self.layer_hidden1.shape)
 
         #verifica se existe mais de 1 camada oculta, se existir considera ela
-		if self.topology[2] >= 1:
-			self.layer_hidden2 = randvalues((self.topology[2], self.topology[1]))
-			#pesos da camada oculta aleatorios
-			self.momentum_hidden2 = scipy.zeros(self.layer_hidden2.shape)
-			self.layer_output = scipy.zeros((self.topology[3], self.topology[2]))
-			self.momentum_output = scipy.zeros(self.layer_output.shape)
+        if self.topology[2] >= 1:
+            self.layer_hidden2 = randvalues((self.topology[2], self.topology[1]))
+            #pesos da camada oculta aleatorios
+            self.momentum_hidden2 = scipy.zeros(self.layer_hidden2.shape)
+            self.layer_output = scipy.zeros((self.topology[3], self.topology[2]))
+            self.momentum_output = scipy.zeros(self.layer_output.shape)
 
-		else:
-			self.layer_output = scipy.zeros((self.topology[3], self.topology[1]))
-			self.momentum_output = scipy.zeros(self.layer_output.shape)
+        else:
+            self.layer_output = scipy.zeros((self.topology[3], self.topology[1]))
+            self.momentum_output = scipy.zeros(self.layer_output.shape)
 
-	def print_layers( self ):
-		"""
+    def print_layers( self ):
+        """
         *esse método será removido na versão final.*
         imprime os valores armazenados nas matrizes de neuronios de cada
         camada
         """
 
-		print( "entrada -> \n", self.layer_input )
-		print( 'oculta 1 -> \n', self.layer_hidden1 )
-		print( 'oculta 2-> \n' , self.layer_hidden2 )
-		print( 'saida -> \n', self.layer_output )
-		print( 'momento hidden1 -> \n', self.momentum_hidden1 )
-		print( 'momento hidden2 -> \n', self.momentum_hidden2 )
-		print( 'momento output -> \n', self.momentum_output,'\n',
+        print( "entrada -> \n", self.layer_input )
+        print( 'oculta 1 -> \n', self.layer_hidden1 )
+        print( 'oculta 2-> \n' , self.layer_hidden2 )
+        print( 'saida -> \n', self.layer_output )
+        print( 'momento hidden1 -> \n', self.momentum_hidden1 )
+        print( 'momento hidden2 -> \n', self.momentum_hidden2 )
+        print( 'momento output -> \n', self.momentum_output,'\n',
          "-"*40, '\n' )
 
-	def dimension_synapses( self ):
-		""" imprime a quantidade de sinapses na rede neural """
+    def dimension_synapses( self ):
+        """ imprime a quantidade de sinapses na rede neural """
 
-		x = None
+        x = None
 
         #verifica se existe mais de 1 camada oculta, se existir considera ela
-		if self.topology[2] > 0:
-			x = ((self.topology[0] * self.topology[1]) +
+        if self.topology[2] > 0:
+            x = ((self.topology[0] * self.topology[1]) +
                 (self.topology[1] * self.topology[2]) +
                 (self.topology[2] * self.topology[3]))
-		else:
-			x = ((self.topology[0] * self.topology[1]) +
+        else:
+            x = ((self.topology[0] * self.topology[1]) +
                 (self.topology[1] * self.topology[3]))
 
-		print( x, 'conexões synapticas')
+        print( x, 'conexões synapticas')
 
-	def execute( self ):
-		""" inicia o treinamento da rede neural """
+    def execute( self ):
+        """ inicia o treinamento da rede neural """
 
-		#enquanto o numero de iteracoes nao atingir o máximo
-		for iteration in range(self.it):
+        #enquanto o numero de iteracoes nao atingir o máximo
+        for iteration in range(self.it):
 
-			error = 0.0
-			#para cada linha da matriz de entrada e saída
-			for entry, output in zip(self.minput, self.moutput):
-				#print("entry: ", entry, " | saida: ", output )
-				self._forward( entry )
-				error += self._backward(output)
-				#self.print_layers()
+            error = 0.0
+            #para cada linha da matriz de entrada e saída
+            for entry, output in zip(self.minput, self.moutput):
+                #print("entry: ", entry, " | saida: ", output )
+                self._forward(entry)
+                error += self._backward(output)
+                #self.print_layers()
 
-	def test(self):
-		""" testa a rede neural """
-		pass
+    def test(self):
+        """ testa a rede neural """
+        pass
 
-	def _forward(self, entry):
-		""" passo para frente: executa a primeira fase do treinamento da
+    def _forward(self, entry):
+        """ passo para frente: executa a primeira fase do treinamento da
          rede neural
          entry -> elemento da matriz de entrada
         """
-		#copia os dados de entrada para a camada de entrada
-		#self.layer_input = entry.copy()
-		self.layer_hidden1 = self.f(func_sum(entry, self.layer_hidden1))
-		self.layer_hidden2 = self.f(func_sum(self.layer_hidden1,
-                                     self.layer_hidden2))
-		self.layer_output = self.f(func_sum(self.layer_hidden2,
-                                     self.layer_output))
-
-	def _backward( self, output ):
-		""" passo para trás: executa a segunda fase do treinamento da rede
-        neural
-        output -> elemento
-        """
-        #out = saida
-        #h2 = hidden2
-        #h1 = hidden1
-        #in = entrada
-
-        delta_out_h2 = None
-        delta_h2_h1 = None
-        delta_h1_in = None
-
-        #se tiver duas camadas ocultas
-        if self.topology[2] > 0:
-            error = 0.0
-            error =
+        
+        #verifica se existe mais de 1 camada oculta, se existir considera ela
+        if self.topology[2] > 0:        
+            self.layer_hidden1 = self.f(func_sum(entry, self.layer_hidden1))
+            self.layer_hidden2 = self.f(func_sum(self.layer_hidden1,
+                self.layer_hidden2))
+            self.layer_output = self.f(func_sum(self.layer_hidden2,
+                self.layer_output))
 
         else:
-            pass
+            self.layer_hidden1 = self.f(func_sum(entry, self.layer_hidden1))
+            self.layer_output = self.f(func_sum(self.layer_hidden1,
+                self.layer_output))
+
+
+
+    def _backward( self, output ):
+        """ passo para trás: executa a segunda fase do treinamento da rede
+        neural
+        output -> elemento de saida (matriz de saida esperada)
+        """
+        #out = saida, h2 = hidden2, h1 = hidden1, in = entrada
+
+        delta_out_h2 = None
+        delta_out_h1 = None
+        delta_h2_h1 = None
+        delta_h1_in = None
+        #calcula os erros das camadas, começando da e saída para a de entrada
+        
+        #verifica se existe mais de 1 camada oculta, se existir considera ela
+        if self.topology[2] > 0:
+            delta_out_h2 = scipy.zeros((1, self.topology[3]))
+            delta_h2_h1 = scipy.zeros((self.topology[3], self.topology[2]))
+            delta_h1_in = scipy.zeros((self.topology[2], self.topology[1]))
+
+        else:
+            delta_out_h1 = scipy.zeros((1, self.topology[3]))
+            # inserir as outras partes da funcao,
+
+
+
